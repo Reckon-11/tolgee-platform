@@ -32,6 +32,7 @@ declare namespace DataCy {
         "administration-debug-customer-exit-button" |
         "administration-ee-license-key-input" |
         "administration-ee-license-release-key-button" |
+        "administration-ee-plan-cancel-button" |
         "administration-ee-plan-field-feature" |
         "administration-ee-plan-field-free" |
         "administration-ee-plan-field-included-mt-credits" |

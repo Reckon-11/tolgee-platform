@@ -1,10 +1,12 @@
-import { Box } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { useTranslate } from '@tolgee/react';
 import { Form, Formik } from 'formik';
 
 import { TextField } from 'tg.component/common/form/fields/TextField';
 import LoadingButton from 'tg.component/common/form/LoadingButton';
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { LINKS } from 'tg.constants/links';
 
 export type TAFormData = {
   name: string;
@@ -93,7 +95,14 @@ export function TAEditForm({
               data-cy="administration-ee-translation-agencies-field-services"
             />
           </Box>
-          <Box display="flex" justifyContent="end" mt={4}>
+          <Box display="flex" justifyContent="end" mt={4} gap={1}>
+            <Button
+              component={Link}
+              to={LINKS.ADMINISTRATION_EE_TA.build()}
+              data-cy="administration-ee-plan-cancel-button"
+            >
+              {t('global_cancel_button')}
+            </Button>
             <LoadingButton
               loading={loading}
               variant="contained"
