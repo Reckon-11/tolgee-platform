@@ -32,7 +32,8 @@ import { TranslationStateType } from 'tg.ee/task/components/taskCreate/Translati
 import { TranslationAgency } from './TranslationAgency';
 import { BoxLoading } from 'tg.component/common/BoxLoading';
 
-type TaskType = components['schemas']['TaskModel']['type'];
+type CreateTaskRequest = components['schemas']['CreateTaskRequest'];
+type TaskType = CreateTaskRequest['type'];
 type LanguageModel = components['schemas']['LanguageModel'];
 
 const StyledMainTitle = styled(DialogTitle)`
@@ -101,7 +102,7 @@ export const OrderTranslationsDialog = ({
   const { t } = useTranslate();
 
   const createTasksLoadable = useApiMutation({
-    url: '/v2/projects/{projectId}/tasks/create-multiple-tasks',
+    url: '/v2/projects/{projectId}/tasks/create-translation-order',
     method: 'post',
     invalidatePrefix: ['/v2/projects/{projectId}/tasks', '/v2/user-tasks'],
   });
@@ -154,21 +155,24 @@ export const OrderTranslationsDialog = ({
           description: initialValues?.description ?? '',
           dueDate: initialValues?.dueDate ?? undefined,
           assignees: initialValues?.languageAssignees ?? {},
-          provider: undefined as number | undefined,
           agreeSharing: true,
           agreeInvite: true,
+          agencyId: undefined as number | undefined,
         }}
         validationSchema={Validation.CREATE_TASK_FORM(t)}
         onSubmit={async (values) => {
-          const data = languages.map((languageId) => ({
-            type: values.type,
-            name: values.name,
-            description: values.description,
-            languageId: languageId,
-            dueDate: values.dueDate,
-            assignees: values.assignees[languageId]?.map((u) => u.id) ?? [],
-            keys: selectedKeys,
-          }));
+          const data = languages.map(
+            (languageId) =>
+              ({
+                type: values.type,
+                name: values.name,
+                description: values.description,
+                languageId: languageId,
+                dueDate: values.dueDate,
+                assignees: values.assignees[languageId]?.map((u) => u.id) ?? [],
+                keys: selectedKeys,
+              } satisfies CreateTaskRequest)
+          );
           createTasksLoadable.mutate(
             {
               path: { projectId },
@@ -177,7 +181,7 @@ export const OrderTranslationsDialog = ({
                 filterOutdated: stateFilters.includes('OUTDATED'),
               },
               content: {
-                'application/json': { tasks: data },
+                'application/json': { tasks: data, agencyId: values.agencyId! },
               },
             },
             {
@@ -197,7 +201,7 @@ export const OrderTranslationsDialog = ({
         {({ submitForm, values, setFieldValue }) => {
           const selectedAgency =
             agenciesLoadable.data?._embedded?.translationAgencies?.find(
-              (a) => a.id === values.provider
+              (a) => a.id === values.agencyId
             );
           return (
             <StyledContainer>
@@ -230,12 +234,12 @@ export const OrderTranslationsDialog = ({
                     ) : (
                       <Box display="grid" gap="20px">
                         {agenciesLoadable.data?._embedded?.translationAgencies?.map(
-                          (provider, i) => (
+                          (agency, i) => (
                             <TranslationAgency
                               key={i}
-                              provider={provider}
-                              selected={values.provider === provider.id}
-                              onSelect={(id) => setFieldValue('provider', id)}
+                              agency={agency}
+                              selected={values.agencyId === agency.id}
+                              onSelect={(id) => setFieldValue('agencyId', id)}
                             />
                           )
                         )}
@@ -306,7 +310,7 @@ export const OrderTranslationsDialog = ({
                     onClick={() => setStep(1)}
                     color="primary"
                     variant="contained"
-                    disabled={values.provider === undefined}
+                    disabled={values.agencyId === undefined}
                     data-cy="order-translation-next"
                   >
                     {t('order_translation_next_button')}

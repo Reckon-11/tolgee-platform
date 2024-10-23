@@ -398,6 +398,9 @@ export interface paths {
     /** Sends a test request to the webhook */
     post: operations["test"];
   };
+  "/v2/projects/{projectId}/tasks/create-translation-order": {
+    post: operations["createTranslationOrder"];
+  };
   "/v2/projects/{projectId}/tasks/create-multiple-tasks": {
     post: operations["createTasks"];
   };
@@ -1197,24 +1200,6 @@ export interface components {
       /** @description The user's permission type. This field is null if uses granular permissions */
       type?: "NONE" | "VIEW" | "TRANSLATE" | "REVIEW" | "EDIT" | "MANAGE";
       /**
-       * @description List of languages user can translate to. If null, all languages editing is permitted.
-       * @example 200001,200004
-       */
-      translateLanguageIds?: number[];
-      /**
-       * @description List of languages user can change state to. If null, changing state of all language values is permitted.
-       * @example 200001,200004
-       */
-      stateChangeLanguageIds?: number[];
-      /**
-       * @deprecated
-       * @description Deprecated (use translateLanguageIds).
-       *
-       * List of languages current user has TRANSLATE permission to. If null, all languages edition is permitted.
-       * @example 200001,200004
-       */
-      permittedLanguageIds?: number[];
-      /**
        * @description Granted scopes to the user. When user has type permissions, this field contains permission scopes of the type.
        * @example KEYS_EDIT,TRANSLATIONS_VIEW
        */
@@ -1253,6 +1238,24 @@ export interface components {
        * @example 200001,200004
        */
       viewLanguageIds?: number[];
+      /**
+       * @description List of languages user can translate to. If null, all languages editing is permitted.
+       * @example 200001,200004
+       */
+      translateLanguageIds?: number[];
+      /**
+       * @description List of languages user can change state to. If null, changing state of all language values is permitted.
+       * @example 200001,200004
+       */
+      stateChangeLanguageIds?: number[];
+      /**
+       * @deprecated
+       * @description Deprecated (use translateLanguageIds).
+       *
+       * List of languages current user has TRANSLATE permission to. If null, all languages edition is permitted.
+       * @example 200001,200004
+       */
+      permittedLanguageIds?: number[];
     };
     LanguageModel: {
       /** Format: int64 */
@@ -1434,6 +1437,14 @@ export interface components {
       /** Format: int64 */
       closedAt?: number;
       state: "NEW" | "IN_PROGRESS" | "DONE" | "CLOSED";
+      agency?: components["schemas"]["TranslationAgencySimpleModel"];
+    };
+    TranslationAgencySimpleModel: {
+      /** Format: int64 */
+      id: number;
+      name: string;
+      url?: string;
+      avatar?: components["schemas"]["Avatar"];
     };
     UpdateTaskKeyRequest: {
       done: boolean;
@@ -2117,12 +2128,12 @@ export interface components {
       createNewKeys: boolean;
     };
     ImportSettingsModel: {
+      /** @description If false, only updates keys, skipping the creation of new keys */
+      createNewKeys: boolean;
       /** @description If true, placeholders from other formats will be converted to ICU when possible */
       convertPlaceholdersToIcu: boolean;
       /** @description If true, key descriptions will be overridden by the import */
       overrideKeyDescriptions: boolean;
-      /** @description If false, only updates keys, skipping the creation of new keys */
-      createNewKeys: boolean;
     };
     TranslationCommentModel: {
       /**
@@ -2281,15 +2292,15 @@ export interface components {
       token: string;
       /** Format: int64 */
       id: number;
-      description: string;
       /** Format: int64 */
       expiresAt?: number;
+      /** Format: int64 */
+      lastUsedAt?: number;
       /** Format: int64 */
       createdAt: number;
       /** Format: int64 */
       updatedAt: number;
-      /** Format: int64 */
-      lastUsedAt?: number;
+      description: string;
     };
     SetOrganizationRoleDto: {
       roleType: "MEMBER" | "OWNER";
@@ -2428,16 +2439,16 @@ export interface components {
       key: string;
       /** Format: int64 */
       id: number;
-      username?: string;
-      description: string;
+      projectName: string;
+      /** Format: int64 */
+      expiresAt?: number;
       scopes: string[];
       /** Format: int64 */
       projectId: number;
       /** Format: int64 */
-      expiresAt?: number;
-      /** Format: int64 */
       lastUsedAt?: number;
-      projectName: string;
+      username?: string;
+      description: string;
       userFullName?: string;
     };
     SuperTokenRequest: {
@@ -2656,9 +2667,6 @@ export interface components {
     WebhookTestResponse: {
       success: boolean;
     };
-    CreateMultipleTasksRequest: {
-      tasks: components["schemas"]["CreateTaskRequest"][];
-    };
     CreateTaskRequest: {
       name: string;
       description: string;
@@ -2677,6 +2685,14 @@ export interface components {
       languageId: number;
       assignees: number[];
       keys: number[];
+    };
+    CreateTranslationOrderRequest: {
+      /** Format: int64 */
+      agencyId: number;
+      tasks: components["schemas"]["CreateTaskRequest"][];
+    };
+    CreateMultipleTasksRequest: {
+      tasks: components["schemas"]["CreateTaskRequest"][];
     };
     CalculateScopeRequest: {
       /** Format: int64 */
@@ -2737,11 +2753,12 @@ export interface components {
        *
        * - KEEP: Translation is not changed
        * - OVERRIDE: Translation is overridden
-       * - NEW: New translation is created)
+       * - NEW: New translation is created
+       * - FORCE_OVERRIDE: Translation is updated, created or kept.
        *
        * @example OVERRIDE
        */
-      resolution: "KEEP" | "OVERRIDE" | "NEW";
+      resolution: "KEEP" | "OVERRIDE" | "NEW" | "FORCE_OVERRIDE";
     };
     KeyImportResolvableResultModel: {
       /** @description List of keys */
@@ -3701,11 +3718,11 @@ export interface components {
       name: string;
       /** Format: int64 */
       id: number;
-      /** @example This is a beautiful organization full of beautiful and clever people */
-      description?: string;
+      avatar?: components["schemas"]["Avatar"];
       /** @example btforg */
       slug: string;
-      avatar?: components["schemas"]["Avatar"];
+      /** @example This is a beautiful organization full of beautiful and clever people */
+      description?: string;
       /**
        * @description The role of currently authorized user.
        *
@@ -4459,15 +4476,15 @@ export interface components {
       user: components["schemas"]["SimpleUserAccountModel"];
       /** Format: int64 */
       id: number;
-      description: string;
       /** Format: int64 */
       expiresAt?: number;
+      /** Format: int64 */
+      lastUsedAt?: number;
       /** Format: int64 */
       createdAt: number;
       /** Format: int64 */
       updatedAt: number;
-      /** Format: int64 */
-      lastUsedAt?: number;
+      description: string;
     };
     PagedModelOrganizationModel: {
       _embedded?: {
@@ -4586,16 +4603,16 @@ export interface components {
       permittedLanguageIds?: number[];
       /** Format: int64 */
       id: number;
-      username?: string;
-      description: string;
+      projectName: string;
+      /** Format: int64 */
+      expiresAt?: number;
       scopes: string[];
       /** Format: int64 */
       projectId: number;
       /** Format: int64 */
-      expiresAt?: number;
-      /** Format: int64 */
       lastUsedAt?: number;
-      projectName: string;
+      username?: string;
+      description: string;
       userFullName?: string;
     };
     PagedModelUserAccountModel: {
@@ -11164,6 +11181,63 @@ export interface operations {
             | components["schemas"]["ErrorResponseTyped"]
             | components["schemas"]["ErrorResponseBody"];
         };
+      };
+    };
+  };
+  createTranslationOrder: {
+    parameters: {
+      query: {
+        filterState?: (
+          | "UNTRANSLATED"
+          | "TRANSLATED"
+          | "REVIEWED"
+          | "DISABLED"
+        )[];
+        filterOutdated?: boolean;
+      };
+      path: {
+        projectId: number;
+      };
+    };
+    responses: {
+      /** OK */
+      200: unknown;
+      /** Bad Request */
+      400: {
+        content: {
+          "application/json":
+            | components["schemas"]["ErrorResponseTyped"]
+            | components["schemas"]["ErrorResponseBody"];
+        };
+      };
+      /** Unauthorized */
+      401: {
+        content: {
+          "application/json":
+            | components["schemas"]["ErrorResponseTyped"]
+            | components["schemas"]["ErrorResponseBody"];
+        };
+      };
+      /** Forbidden */
+      403: {
+        content: {
+          "application/json":
+            | components["schemas"]["ErrorResponseTyped"]
+            | components["schemas"]["ErrorResponseBody"];
+        };
+      };
+      /** Not Found */
+      404: {
+        content: {
+          "application/json":
+            | components["schemas"]["ErrorResponseTyped"]
+            | components["schemas"]["ErrorResponseBody"];
+        };
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateTranslationOrderRequest"];
       };
     };
   };

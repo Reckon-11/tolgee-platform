@@ -42,20 +42,18 @@ const StyledDescription = styled(Box)`
 `;
 
 type Props = {
-  provider: TranslationAgencyModel;
+  agency: TranslationAgencyModel;
   selected: boolean;
   onSelect: (id: number) => void;
 };
 
-export const TranslationAgency = ({ provider, selected, onSelect }: Props) => {
+export const TranslationAgency = ({ agency, selected, onSelect }: Props) => {
   const url =
-    provider.url && isValidHttpUrl(provider.url)
-      ? new URL(provider.url)
-      : undefined;
+    agency.url && isValidHttpUrl(agency.url) ? new URL(agency.url) : undefined;
   return (
     <StyledContainer
       className={clsx({ selected })}
-      onClick={() => onSelect(provider.id)}
+      onClick={() => onSelect(agency.id)}
     >
       <Box
         display="flex"
@@ -63,10 +61,10 @@ export const TranslationAgency = ({ provider, selected, onSelect }: Props) => {
         flexWrap="wrap"
         alignItems="start"
       >
-        {provider.avatar ? (
-          <img src={provider.avatar?.large} alt={provider.name} width={150} />
+        {agency.avatar ? (
+          <img src={agency.avatar?.large} alt={agency.name} width={150} />
         ) : (
-          <h2 style={{ margin: 0 }}>{provider.name}</h2>
+          <h2 style={{ margin: 0 }}>{agency.name}</h2>
         )}
         <Box display="flex" alignItems="center" gap="20px">
           {url && (
@@ -77,16 +75,16 @@ export const TranslationAgency = ({ provider, selected, onSelect }: Props) => {
           )}
         </Box>
       </Box>
-      {Boolean(provider.services.length) && (
+      {Boolean(agency.services.length) && (
         <StyledServices>
-          {provider.services.map((item) => (
+          {agency.services.map((item) => (
             <Box key={item}>{item}</Box>
           ))}
         </StyledServices>
       )}
-      {provider.description && (
+      {agency.description && (
         <StyledDescription>
-          <ProviderDescription description={provider.description} />
+          <ProviderDescription description={agency.description} />
         </StyledDescription>
       )}
     </StyledContainer>
