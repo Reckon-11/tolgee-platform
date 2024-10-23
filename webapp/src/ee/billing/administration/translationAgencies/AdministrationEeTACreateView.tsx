@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 
 import { DashboardPage } from 'tg.component/layout/DashboardPage';
-import { LINKS, PARAMS } from 'tg.constants/links';
+import { LINKS } from 'tg.constants/links';
 import { useBillingApiMutation } from 'tg.service/http/useQueryApi';
 import { BaseAdministrationView } from 'tg.views/administration/components/BaseAdministrationView';
 import { TAEditForm } from './TAEditForm';
@@ -41,12 +41,8 @@ export const AdministrationEeTACreateView = () => {
                   },
                 },
                 {
-                  onSuccess(data) {
-                    history.push(
-                      LINKS.ADMINISTRATION_EE_TA_EDIT.build({
-                        [PARAMS.TA_ID]: data.id,
-                      })
-                    );
+                  onSuccess() {
+                    history.push(LINKS.ADMINISTRATION_EE_TA.build());
                   },
                 }
               );
